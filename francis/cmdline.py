@@ -45,9 +45,17 @@ def click_run():
     cli(obj={})
 
 
-@click.group()
-def cli():
-    pass
+@click.group(invoke_without_command=True)
+@click.pass_context
+def cli(ctx):
+    """Todoist cli for Will's devious purposes.
+
+    Note: If invoked without a COMMAND, this does "francis list" which defaults
+    to showing things due today.
+
+    """
+    if ctx.invoked_subcommand is None:
+        ctx.invoke(list_cmd)
 
 
 @cli.command(name='list')
