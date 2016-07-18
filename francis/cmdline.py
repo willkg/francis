@@ -14,6 +14,10 @@ USAGE = '%prog [options] [command] [command-options]'
 VERSION = 'francis ' + __version__
 
 
+class DoesNotExist(Exception):
+    pass
+
+
 def add_config(fun):
     @functools.wraps(fun)
     def _add_config(*args, **kwargs):
@@ -33,11 +37,48 @@ def add_config(fun):
     return _add_config
 
 
+def display_priority(pri):
+    if pri == 4:
+        return 'HIGH'
+    return ''
+
+
 def display_project(proj):
     if not proj or proj.data.get('inbox_project'):
         return ''
 
     return proj['name']
+
+
+def get_project_by_name(api, name):
+    try:
+        return [p for p in api.projects if p['name'] == name][0]
+    except IndexError:
+        raise DoesNotExist
+
+
+PRIORITIES = {
+    'h': 4,
+}
+DEFAULT_PRIORITY = 1
+
+
+def apply_changes(api, item, changes):
+    for change in changes:
+        if change.startswith('pri'):
+            new_val = change.split(':', 1)[1].strip()
+            new_val = PRIORITIES.get(new_val.lower()[0], DEFAULT_PRIORITY)
+            item.update(priority=new_val)
+        elif change.startswith('pro'):
+            new_val = change.split(':', 1)[1].strip()
+            try:
+                proj = get_project_by_name(api, new_val)
+            except DoesNotExist:
+                click.echo('ERROR: "%s" does not exist' % new_val)
+            else:
+                item.update(project=proj['id'])
+        else:
+            click.echo('ERROR: unknown change type')
 
 
 def click_run():
@@ -56,6 +97,27 @@ def cli(ctx):
     """
     if ctx.invoked_subcommand is None:
         ctx.invoke(list_cmd)
+
+
+@cli.command(name='set')
+@click.argument('ids', nargs=1)
+@click.argument('changes', nargs=-1)
+@click.pass_context
+@add_config
+def set_cmd(cfg, ctx, ids, changes):
+    api = todoist.api.TodoistAPI(cfg['auth_token'])
+    api.sync()
+
+    # FIXME: Add undo?
+
+    for item_id in ids.split(','):
+        item = api.items.get_by_id(int(item_id))
+        apply_changes(api, item, changes)
+
+    api.commit()
+
+    print ids
+    print changes
 
 
 @cli.command(name='list')
@@ -104,7 +166,7 @@ def list_cmd(cfg, ctx, query):
         for task in data:
             table.append(
                 (
-                    task['priority'],
+                    display_priority(task['priority']),
                     task['content'],
                     display_project(api.projects.get_by_id(task['project_id'])),
                     task['date_string'],
