@@ -9,7 +9,9 @@ def get_file(fn):
         return fp.read()
 
 requirements = [
-    # TODO: put package requirements here
+    'click',
+    'tabulate',
+    'todoist-python',
 ]
 
 test_requirements = [
@@ -36,7 +38,11 @@ setup(
     install_requires=requirements,
     license="BSD",
     zip_safe=False,
-    keywords='francis',
+    keywords='todoist cli',
+    entry_points="""
+        [console_scripts]
+        francis=francis.cmdline:click_run
+    """,
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'Intended Audience :: Developers',
