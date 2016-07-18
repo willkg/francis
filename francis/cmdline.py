@@ -77,6 +77,14 @@ def apply_changes(api, item, changes):
                 click.echo('ERROR: "%s" does not exist' % new_val)
             else:
                 item.update(project=proj['id'])
+        elif change.startswith('done'):
+            new_val = change.split(':', 1)[1].strip()
+            if new_val in (1, '1'):
+                item.complete()
+            elif new_val in (0, '0'):
+                item.uncomplete()
+            else:
+                click.echo('ERROR: "%s" not a valid done value' % new_val)
         else:
             click.echo('ERROR: unknown change type')
 
@@ -91,20 +99,20 @@ def click_run():
 def cli(ctx):
     """Todoist cli for Will's devious purposes.
 
-    Note: If invoked without a COMMAND, this does "francis list" which defaults
-    to showing things due today.
+    Note: If invoked without a COMMAND, this does "francis list today".
 
     """
     if ctx.invoked_subcommand is None:
         ctx.invoke(list_cmd)
 
 
-@cli.command(name='set')
+@cli.command(name='modify')
 @click.argument('ids', nargs=1)
 @click.argument('changes', nargs=-1)
 @click.pass_context
 @add_config
-def set_cmd(cfg, ctx, ids, changes):
+def modify_cmd(cfg, ctx, ids, changes):
+    """Modify one or more items"""
     api = todoist.api.TodoistAPI(cfg['auth_token'])
     api.sync()
 
@@ -116,8 +124,40 @@ def set_cmd(cfg, ctx, ids, changes):
 
     api.commit()
 
-    print ids
-    print changes
+    print 'Done!'
+
+
+@cli.command(name='done')
+@click.argument('ids', nargs=1)
+@click.pass_context
+@add_config
+def done_cmd(cfg, ctx, ids, changes):
+    """Mark one or more items as done"""
+    api = todoist.api.TodoistAPI(cfg['auth_token'])
+    api.sync()
+
+    # FIXME: Add undo?
+
+    for item_id in ids.split(','):
+        item = api.items.get_by_id(int(item_id))
+        apply_changes(api, item, ['done:1'])
+
+    api.commit()
+    print 'Done!'
+
+
+@cli.command(name='today')
+@click.pass_context
+def today_cmd(ctx):
+    """Shortcut for "francis list today"."""
+    ctx.invoke(list_cmd)
+
+
+@cli.command(name='overdue')
+@click.pass_context
+def overdue_cmd(ctx):
+    """Shortcut for "francis list 'over due'"."""
+    ctx.invoke(list_cmd, query=['over due'])
 
 
 @cli.command(name='list')
@@ -150,7 +190,8 @@ def list_cmd(cfg, ctx, query):
         if item['type'] == 'overdue':
             item['query'] = 'Over due'
 
-        click.echo(item['query'])
+        click.echo('[%s]' % item['query'])
+        click.echo('')
 
         if not item['data']:
             continue
