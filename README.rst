@@ -18,13 +18,75 @@ Todoist cli
 * Free software: ISC license
 * Documentation: https://francis.readthedocs.org.
 
+
 Features
 --------
 
-* TODO
+* view today, tomorrow and other date-based todo lists
+* modify priority and project
+* mark items as complete
+
+
+Install
+-------
+
+Install from git clone because it's not on PyPI, yet:
+
+1. Clone the git repository to your local machine::
+
+     $ git clone https://github.com/willkg/francis
+
+2. Cnstall it with `pipsi <https://github.com/mitsuhiko/pipsi/>`_::
+
+     $ pipsi install .
+
+
+Usage
+-----
+
+View help::
+
+  $ francis --help
+
+
+View todo items::
+
+  # Shows today's items
+  $ francis
+
+  # Shows today's items
+  $ francis today
+
+  # Shows overdue items
+  $ francis overdue
+
+  # Shows tomorrow's items
+  $ francis tomorrow
+
+  # Shows items due July 22nd
+  $ francis list "july 22"
+
+  # Shows items due friday
+  $ francis list friday
+
+
+Modify todo items::
+
+  # Change priority to high (4)
+  $ francis set 4040404 pri:H
+
+  # Change priority to low (1)
+  $ francis set 4040404 pri:L
+
+  # Change project to "Work"
+  $ francis set 4040404 proj:work
+
+  # Do both at the same time to multiple tasks
+  $ francis set 3030303,4040404,5050505 pri:H proj:work
+
 
 Credits
----------
+-------
 
 This package was created with Cookiecutter_ and the `audreyr/cookiecutter-pypackage`_ project template.
 

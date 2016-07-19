@@ -28,7 +28,7 @@ class Action:
     """
     def __init__(self, item, field, old_value, new_value):
         self.item_id = item['id']
-        self.item_seq_no = item['seq_no']
+        self.item_seq_no = item.data.get('seq_no')
         self.field = field
         self.old_value = old_value
         self.new_value = new_value
@@ -171,7 +171,7 @@ def modify_cmd(cfg, ctx, ids, changes):
 @click.argument('ids', nargs=1)
 @click.pass_context
 @add_config
-def done_cmd(cfg, ctx, ids, changes):
+def done_cmd(cfg, ctx, ids):
     """Mark one or more items as done"""
     api = todoist.api.TodoistAPI(cfg['auth_token'])
     api.sync()
