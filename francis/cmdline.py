@@ -18,6 +18,14 @@ class DoesNotExist(Exception):
     pass
 
 
+class Action:
+    def __init__(self, item_id, field, old_value, new_value):
+        self.item_id = item_id
+        self.field = field
+        self.old_value = old_value
+        self.new_value = new_value
+
+
 def add_config(fun):
     @functools.wraps(fun)
     def _add_config(*args, **kwargs):
@@ -64,10 +72,14 @@ DEFAULT_PRIORITY = 1
 
 
 def apply_changes(api, item, changes):
+    """Applies a set of changes and generates a list of Actions applied"""
+    history = []
+
     for change in changes:
         if change.startswith('pri'):
             new_val = change.split(':', 1)[1].strip()
             new_val = PRIORITIES.get(new_val.lower()[0], DEFAULT_PRIORITY)
+            history.append(Action(item['id'], 'priority', item['priority'], new_val))
             item.update(priority=new_val)
         elif change.startswith('pro'):
             new_val = change.split(':', 1)[1].strip()
@@ -76,17 +88,22 @@ def apply_changes(api, item, changes):
             except DoesNotExist:
                 click.echo('ERROR: "%s" does not exist' % new_val)
             else:
+                history.append(Action(item['id'], 'project', item['project_id'], new_val))
                 item.update(project=proj['id'])
         elif change.startswith('done'):
             new_val = change.split(':', 1)[1].strip()
             if new_val in (1, '1'):
+                history.append(Action(item['id'], 'completed', '0', '1'))
                 item.complete()
             elif new_val in (0, '0'):
+                history.append(Action(item['id'], 'completed', '1', '0'))
                 item.uncomplete()
             else:
                 click.echo('ERROR: "%s" not a valid done value' % new_val)
         else:
             click.echo('ERROR: unknown change type')
+
+    return history
 
 
 def click_run():
@@ -106,6 +123,20 @@ def cli(ctx):
         ctx.invoke(list_cmd)
 
 
+@cli.command(name='undo')
+@click.pass_context
+@add_config
+def undo_cmd(cfg, ctx):
+    api = todoist.api.TodoistAPI(cfg['auth_token'])
+    api.sync()
+
+    # FIXME: Get history, pop top item off, undo it
+    # undo_item =
+    # click.echo('undo item ...')
+    api.commit()
+    click.echo('Done!')
+
+
 @cli.command(name='modify')
 @click.argument('ids', nargs=1)
 @click.argument('changes', nargs=-1)
@@ -116,15 +147,16 @@ def modify_cmd(cfg, ctx, ids, changes):
     api = todoist.api.TodoistAPI(cfg['auth_token'])
     api.sync()
 
-    # FIXME: Add undo?
+    history = []
 
     for item_id in ids.split(','):
         item = api.items.get_by_id(int(item_id))
-        apply_changes(api, item, changes)
+        history.extend(apply_changes(api, item, changes))
+
+    # FIXME: Update history.
 
     api.commit()
-
-    print 'Done!'
+    click.echo('Done!')
 
 
 @cli.command(name='done')
@@ -136,14 +168,16 @@ def done_cmd(cfg, ctx, ids, changes):
     api = todoist.api.TodoistAPI(cfg['auth_token'])
     api.sync()
 
-    # FIXME: Add undo?
+    history = []
 
     for item_id in ids.split(','):
         item = api.items.get_by_id(int(item_id))
-        apply_changes(api, item, ['done:1'])
+        history.extend(apply_changes(api, item, ['done:1']))
+
+    # FIXME: Update history.
 
     api.commit()
-    print 'Done!'
+    click.echo('Done!')
 
 
 @cli.command(name='today')
