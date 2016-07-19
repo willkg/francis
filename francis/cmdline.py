@@ -1,13 +1,13 @@
 import functools
 import sys
+import textwrap
 import traceback
 
 import click
-import tabulate
 import todoist
 
 from francis import __version__
-from francis.util import ConfigFileMissingError, get_config
+from francis.util import ConfigFileMissingError, get_config, prettytable
 
 
 USAGE = '%prog [options] [command] [command-options]'
@@ -19,8 +19,16 @@ class DoesNotExist(Exception):
 
 
 class Action:
-    def __init__(self, item_id, field, old_value, new_value):
-        self.item_id = item_id
+    """Captures an action applied to a specific item
+
+    The item is denoted by an item id and the sequence number. This lets us
+    undo an action iff the sequence number is the same which implies that item
+    has not changed since the action was applied.
+
+    """
+    def __init__(self, item, field, old_value, new_value):
+        self.item_id = item['id']
+        self.item_seq_no = item['seq_no']
         self.field = field
         self.old_value = old_value
         self.new_value = new_value
@@ -79,7 +87,7 @@ def apply_changes(api, item, changes):
         if change.startswith('pri'):
             new_val = change.split(':', 1)[1].strip()
             new_val = PRIORITIES.get(new_val.lower()[0], DEFAULT_PRIORITY)
-            history.append(Action(item['id'], 'priority', item['priority'], new_val))
+            history.append(Action(item, 'priority', item['priority'], new_val))
             item.update(priority=new_val)
         elif change.startswith('pro'):
             new_val = change.split(':', 1)[1].strip()
@@ -88,15 +96,15 @@ def apply_changes(api, item, changes):
             except DoesNotExist:
                 click.echo('ERROR: "%s" does not exist' % new_val)
             else:
-                history.append(Action(item['id'], 'project', item['project_id'], new_val))
+                history.append(Action(item, 'project', item['project_id'], new_val))
                 item.update(project=proj['id'])
         elif change.startswith('done'):
             new_val = change.split(':', 1)[1].strip()
             if new_val in (1, '1'):
-                history.append(Action(item['id'], 'completed', '0', '1'))
+                history.append(Action(item, 'completed', '0', '1'))
                 item.complete()
             elif new_val in (0, '0'):
-                history.append(Action(item['id'], 'completed', '1', '0'))
+                history.append(Action(item, 'completed', '1', '0'))
                 item.uncomplete()
             else:
                 click.echo('ERROR: "%s" not a valid done value' % new_val)
@@ -231,7 +239,7 @@ def list_cmd(cfg, ctx, query):
             continue
 
         table = [
-            ('pri', 'content', 'project_id', 'date_string', 'id')
+            ('pri', 'content', 'proj', 'due date', 'id')
         ]
         data = sorted(
             item['data'],
@@ -249,7 +257,7 @@ def list_cmd(cfg, ctx, query):
                 )
             )
 
-        click.echo(tabulate.tabulate(table[1:], headers=table[0]))
+        click.echo(prettytable(click.get_terminal_size()[0], table))
 
 
 def exception_handler(exc_type, exc_value, exc_tb):
