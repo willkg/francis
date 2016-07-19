@@ -46,7 +46,7 @@ def prettytable(width, rows):
         row.extend([''] * (row_size - len(row)))
 
     # Initialize col_size with the length of each column in the first row
-    col_size = [len(col) for col in rows[0]]
+    col_size = [len(str(col)) for col in rows[0]]
     for row in rows:
         for i, col in enumerate(row):
             col_size[i] = max(col_size[i], len(str(col)))
