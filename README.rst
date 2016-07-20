@@ -60,9 +60,6 @@ View todo items::
   # Shows overdue items
   $ francis overdue
 
-  # Shows tomorrow's items
-  $ francis tomorrow
-
   # Shows items due July 22nd
   $ francis list "july 22"
 
@@ -83,6 +80,21 @@ Modify todo items::
 
   # Do both at the same time to multiple tasks
   $ francis set 3030303,4040404,5050505 pri:H proj:work
+
+
+Show details for specified items::
+
+  # Show one item
+  $ francis show 4040404
+
+  # Show multiple items
+  $ francis show 3030303,4040404
+
+
+For ids, you can always do suffixes rather than use the whole id which is
+pretty unwieldy. For example, if you have an item with id 1234567 you could
+refer to it as "567". Generally 3 digits is probably sufficient. If it's not,
+francis will whine at you.
 
 
 Credits
