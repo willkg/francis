@@ -72,7 +72,7 @@ def display_project(proj):
 
 def get_project_by_name(api, name):
     try:
-        return [p for p in api.projects if p['name'] == name][0]
+        return [p for p in api.projects.all() if p['name'].lower() == name.lower()][0]
     except IndexError:
         raise DoesNotExist
 
@@ -93,15 +93,16 @@ def apply_changes(api, item, changes):
             new_val = PRIORITIES.get(new_val.lower()[0], DEFAULT_PRIORITY)
             history.append(Action(item, 'priority', item['priority'], new_val))
             item.update(priority=new_val)
+
         elif change.startswith('pro'):
             new_val = change.split(':', 1)[1].strip()
             try:
                 proj = get_project_by_name(api, new_val)
+                history.append(Action(item, 'project', item['project_id'], new_val))
+                item.move(proj['id'])
             except DoesNotExist:
                 click.echo('ERROR: "%s" does not exist' % new_val)
-            else:
-                history.append(Action(item, 'project', item['project_id'], new_val))
-                item.update(project=proj['id'])
+
         elif change.startswith('done'):
             new_val = change.split(':', 1)[1].strip()
             if new_val in (1, '1'):
@@ -112,6 +113,7 @@ def apply_changes(api, item, changes):
                 item.uncomplete()
             else:
                 click.echo('ERROR: "%s" not a valid done value' % new_val)
+
         else:
             click.echo('ERROR: unknown change type')
 
@@ -198,8 +200,13 @@ def modify_cmd(cfg, ctx, ids, changes):
     history = []
 
     for item_id in ids.split(','):
-        item = get_by_id_suffix(api, item_id)
-        history.extend(apply_changes(api, item, changes))
+        try:
+            item = get_by_id_suffix(api, item_id)
+            history.extend(apply_changes(api, item, changes))
+        except DoesNotExist:
+            click.echo('"%s" does not exist.' % item_id)
+        except TooMany:
+            click.echo('"%s" matches multiple items.' % item_id)
 
     # FIXME: Update history.
 
