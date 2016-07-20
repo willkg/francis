@@ -203,6 +203,7 @@ def modify_cmd(cfg, ctx, ids, changes):
         try:
             item = get_by_id_suffix(api, item_id)
             history.extend(apply_changes(api, item, changes))
+            click.echo('Applied changes to #%s: %s.' % (item['id'], item['content']))
         except DoesNotExist:
             click.echo('"%s" does not exist.' % item_id)
         except TooMany:
