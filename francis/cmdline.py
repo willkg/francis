@@ -229,6 +229,7 @@ def done_cmd(cfg, ctx, ids):
     for item_id in ids.split(','):
         item = get_by_id_suffix(api, item_id)
         history.extend(apply_changes(api, item, ['done:1']))
+        click.echo('Marked as done #%s: %s.' % (item['id'], item['content']))
 
     # FIXME: Update history.
 
