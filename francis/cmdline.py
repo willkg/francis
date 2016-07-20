@@ -1,3 +1,4 @@
+import datetime
 import functools
 import sys
 import textwrap
@@ -242,6 +243,32 @@ def done_cmd(cfg, ctx, ids):
 def today_cmd(ctx):
     """Shortcut for "francis list today"."""
     ctx.invoke(list_cmd)
+
+
+@cli.command(name='tomorrow')
+@click.pass_context
+def tomorrow_cmd(ctx):
+    """Shortcut for "francis list tomorrow"."""
+    ctx.invoke(list_cmd, query=['tomorrow'])
+
+
+@cli.command(name='thisweek')
+@click.pass_context
+def thisweek_cmd(ctx):
+    """Shows this week."""
+    MON, TUE, WED, THU, FRI, SAT, SUN = range(7)
+    LOOKUP = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+
+    today = datetime.date.today().weekday()
+    days = ['today']
+    if today not in (SAT, SUN):
+        for i in range(today+1, FRI+1):
+            # days.append('+%s day' % (i - today))
+            days.append(LOOKUP[i])
+
+    for day in days:
+        ctx.invoke(list_cmd, query=[day])
+        click.echo('')
 
 
 @cli.command(name='overdue')
