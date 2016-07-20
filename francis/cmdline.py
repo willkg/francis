@@ -18,6 +18,10 @@ class DoesNotExist(Exception):
     pass
 
 
+class TooMany(Exception):
+    pass
+
+
 class Action:
     """Captures an action applied to a specific item
 
@@ -114,6 +118,19 @@ def apply_changes(api, item, changes):
     return history
 
 
+def get_by_id_suffix(api, obj_id_suffix):
+    # Based on GetByIdMixin.get_by_id
+    objs = [
+        obj for obj in api.items.state[api.items.state_name]
+        if str(obj['id']).endswith(obj_id_suffix) or obj.temp_id.endswith(obj_id_suffix)
+    ]
+    if not objs:
+        raise DoesNotExist
+    if len(objs) == 1:
+        return objs[0]
+    raise TooMany
+
+
 def click_run():
     sys.excepthook = exception_handler
     cli(obj={})
@@ -145,6 +162,29 @@ def undo_cmd(cfg, ctx):
     click.echo('Done!')
 
 
+@cli.command(name='show')
+@click.argument('ids', nargs=1)
+@click.pass_context
+@add_config
+def show(cfg, ctx, ids):
+    """Shows one or more items"""
+    api = todoist.api.TodoistAPI(cfg['auth_token'])
+    api.sync()
+
+    for item_id in ids.split(','):
+        try:
+            item = get_by_id_suffix(api, item_id)
+            click.echo('id:       %s' % item['id'])
+            click.echo('priority: %s' % display_priority(item['priority']))
+            click.echo('content:  %s' % item['content'])
+            click.echo('project:  %s' % display_project(api.projects.get_by_id(item['project_id'])))
+            click.echo('due:      %s' % item['date_string'])
+        except DoesNotExist:
+            click.echo('"%s" does not exist.' % item_id)
+        except TooMany:
+            click.echo('"%s" matches multiple items.' % item_id)
+
+
 @cli.command(name='modify')
 @click.argument('ids', nargs=1)
 @click.argument('changes', nargs=-1)
@@ -158,7 +198,7 @@ def modify_cmd(cfg, ctx, ids, changes):
     history = []
 
     for item_id in ids.split(','):
-        item = api.items.get_by_id(int(item_id))
+        item = get_by_id_suffix(api, item_id)
         history.extend(apply_changes(api, item, changes))
 
     # FIXME: Update history.
@@ -179,7 +219,7 @@ def done_cmd(cfg, ctx, ids):
     history = []
 
     for item_id in ids.split(','):
-        item = api.items.get_by_id(int(item_id))
+        item = get_by_id_suffix(api, item_id)
         history.extend(apply_changes(api, item, ['done:1']))
 
     # FIXME: Update history.
