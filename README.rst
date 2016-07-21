@@ -49,6 +49,20 @@ View help::
   $ francis --help
 
 
+Add todo items::
+
+  # Add an item "new item" in the Inbox project due today
+  $ francis add new item
+
+  # Add a high priority item "new item" in the work project due today
+  $ francis add proj:Work pri:H new item
+
+  # Add an item that has punctuation
+  $ francis add "gotta make $$$!"
+
+  # Add an item with quotes
+  $ francis add "gotta make them \"happy\""
+
 View todo items::
 
   # Shows today's items
