@@ -1,5 +1,7 @@
+import datetime
 import os
 
+import pendulum
 import tabulate
 
 
@@ -16,6 +18,64 @@ def parse_rc(data):
         key, val = [mem.strip() for mem in line.split('=', 1)]
         contents[key.lower()] = val
     return contents
+
+
+def parse_date(text, relative_to=None):
+    """Converts a date string into a datetime.date
+
+    This is relative to the relative_to date which defaults to today.
+
+    :arg text: the text to parse
+    :arg relative_to: (optional) the datetime object to parse dates
+        relative to
+
+    :returns: Pendulum (subclass of datetime)
+
+    :raises ValueError: if the text is not parseable
+
+    """
+    # First, if it's a date, try parsing it with pendulum--this doesn't require
+    # a relative-to date.
+    try:
+        return pendulum.instance(datetime.datetime.strptime(text, '%Y-%m-%d'))
+    except ValueError:
+        pass
+
+    if relative_to is None:
+        relative_to = pendulum.today()
+    else:
+        relative_to = pendulum.instance(relative_to)
+
+    # Match on lowercase messages
+    text = text.lower()
+
+    # Today and tomorrow
+    if text.startswith('tod'):
+        return relative_to
+    if text.startswith('tom'):
+        return relative_to.add(days=1)
+
+    # Day of week; parsed as after today
+    # (day of week is 0-based where 0 is a sunday)
+    today_index = relative_to.day_of_week
+    pairs = [
+        ('sunday', 0),
+        ('monday', 1),
+        ('tuesday', 2),
+        ('wednesday', 3),
+        ('thursday', 4),
+        ('friday', 5),
+        ('saturday', 6)
+    ]
+    for day, offset in pairs:
+        if day.startswith(text):
+            adjustment = (offset - today_index) % 7
+            print today_index, offset, adjustment
+            return relative_to.add(days=adjustment)
+
+    # FIXME: Other things to support from taskwarrior:
+    # http://taskwarrior.org/docs/dates.html#names
+    raise ValueError('"%s" is not parseable' % text)
 
 
 def get_config(path=None):

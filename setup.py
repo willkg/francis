@@ -22,6 +22,7 @@ def get_file(fn):
 
 requirements = [
     'click',
+    'pendulum',
     'tabulate',
     'todoist-python',
 ]
