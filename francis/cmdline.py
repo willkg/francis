@@ -80,8 +80,13 @@ def get_project_by_name(api, name):
 
 PRIORITIES = {
     'h': 4,
+    'l': 1,
 }
 DEFAULT_PRIORITY = 1
+
+
+def get_val(keyval):
+    return keyval.split(':', 1)[1].strip()
 
 
 def apply_changes(api, item, changes):
@@ -90,13 +95,13 @@ def apply_changes(api, item, changes):
 
     for change in changes:
         if change.startswith('pri'):
-            new_val = change.split(':', 1)[1].strip()
+            new_val = get_val(change)
             new_val = PRIORITIES.get(new_val.lower()[0], DEFAULT_PRIORITY)
             history.append(Action(item, 'priority', item['priority'], new_val))
             item.update(priority=new_val)
 
         elif change.startswith('pro'):
-            new_val = change.split(':', 1)[1].strip()
+            new_val = get_val(change)
             try:
                 proj = get_project_by_name(api, new_val)
                 history.append(Action(item, 'project', item['project_id'], new_val))
@@ -105,11 +110,11 @@ def apply_changes(api, item, changes):
                 click.echo('ERROR: "%s" does not exist' % new_val)
 
         elif change.startswith('done'):
-            new_val = change.split(':', 1)[1].strip()
-            if new_val in (1, '1'):
+            new_val = get_val(change)
+            if new_val == '1':
                 history.append(Action(item, 'completed', '0', '1'))
                 item.complete()
-            elif new_val in (0, '0'):
+            elif new_val == '0':
                 history.append(Action(item, 'completed', '1', '0'))
                 item.uncomplete()
             else:
@@ -186,6 +191,51 @@ def show(cfg, ctx, ids):
             click.echo('"%s" does not exist.' % item_id)
         except TooMany:
             click.echo('"%s" matches multiple items.' % item_id)
+
+
+@cli.command(name='add')
+@click.argument('mods', nargs=-1)
+@click.pass_context
+@add_config
+def add_cmd(cfg, ctx, mods):
+    api = todoist.api.TodoistAPI(cfg['auth_token'])
+    api.sync()
+
+    kwargs = {
+        'date_string': 'today'
+    }
+    project_id = get_project_by_name(api, 'Inbox')
+    text = []
+
+    for item in mods:
+        if item.startswith('pri'):
+            val = get_val(item)
+            try:
+                kwargs['priority'] = PRIORITIES[val.lower()[0]]
+            except KeyError:
+                click.echo('ERROR: pri "%s" does not exist. Try H or L.' % val)
+                raise click.Abort()
+
+        elif item.startswith('proj'):
+            val = get_val(item)
+            try:
+                project_id = get_project_by_name(api, val)['id']
+            except DoesNotExist:
+                click.echo('ERROR: "%s" is not a project.' % val)
+                raise click.Abort()
+        # FIXME: due date
+        else:
+            text.append(item)
+
+    if not text:
+        click.echo('ERROR: No task summary text.')
+        raise click.Abort()
+
+    text = ' '.join(text)
+    item = api.items.add(text, project_id, **kwargs)
+    api.commit()
+    click.echo('Task created #%s: %s.' % (item['id'], item['content']))
+    click.echo('Done!')
 
 
 @cli.command(name='modify')
