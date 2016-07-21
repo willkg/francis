@@ -198,6 +198,16 @@ def show(cfg, ctx, ids):
 @click.pass_context
 @add_config
 def add_cmd(cfg, ctx, mods):
+    """Add a new task
+
+    Examples:
+
+    \b
+    * francis add new item
+    * francis add proj:Work pri:H tweak the befunge valve to hot
+    * francis add "gotta make $$$!"
+
+    """
     api = todoist.api.TodoistAPI(cfg['auth_token'])
     api.sync()
 
