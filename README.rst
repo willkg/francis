@@ -29,7 +29,7 @@ Install from git clone because it's not on PyPI, yet:
 
      $ git clone https://github.com/willkg/francis
 
-2. Cnstall it with `pipsi <https://github.com/mitsuhiko/pipsi/>`_::
+2. Install it with `pipsi <https://github.com/mitsuhiko/pipsi/>`_::
 
      $ pipsi install .
 
