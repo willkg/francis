@@ -235,24 +235,7 @@ def deferall_cmd(cfg, ctx):
     click.echo('Done!')
 
 
-@cli.command(name='add')
-@click.argument('mods', nargs=-1)
-@click.pass_context
-@add_config
-def add_cmd(cfg, ctx, mods):
-    """Add a new task
-
-    Examples:
-
-    \b
-    * francis add new item
-    * francis add proj:Work pri:H tweak the befunge valve to hot
-    * francis add "gotta make $$$!"
-
-    """
-    api = todoist.api.TodoistAPI(cfg['auth_token'])
-    api.sync()
-
+def _add(api, mods):
     kwargs = {
         'date_string': 'today'
     }
@@ -284,9 +267,52 @@ def add_cmd(cfg, ctx, mods):
         raise click.Abort()
 
     text = ' '.join(text)
-    item = api.items.add(text, project_id, **kwargs)
+    return api.items.add(text, project_id, **kwargs)
+
+
+@cli.command(name='add')
+@click.argument('mods', nargs=-1)
+@click.pass_context
+@add_config
+def add_cmd(cfg, ctx, mods):
+    """Add a new task
+
+    Examples:
+
+    \b
+    * francis add new item
+    * francis add proj:Work pri:H tweak the befunge valve to hot
+    * francis add "gotta make $$$!"
+
+    """
+    api = todoist.api.TodoistAPI(cfg['auth_token'])
+    api.sync()
+
+    item = _add(api, mods)
+
     api.commit()
     click.echo('Task created #%s: %s.' % (item['id'], item['content']))
+    click.echo('Done!')
+
+
+@cli.command(name='log')
+@click.argument('mods', nargs=-1)
+@click.pass_context
+@add_config
+def log_cmd(cfg, ctx, mods):
+    api = todoist.api.TodoistAPI(cfg['auth_token'])
+    api.sync()
+
+    item = _add(api, mods)
+
+    api.commit()
+
+    history = []
+    history.extend(apply_changes(api, item, ['done:1']))
+
+    api.commit()
+
+    click.echo('Task logged #%s: %s.' % (item['id'], item['content']))
     click.echo('Done!')
 
 
