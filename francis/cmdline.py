@@ -301,6 +301,7 @@ def add_cmd(cfg, ctx, mods):
 @click.pass_context
 @add_config
 def log_cmd(cfg, ctx, mods):
+    """Adds a task and marks it complete in one step"""
     api = todoist.api.TodoistAPI(cfg['auth_token'])
     api.sync()
 
@@ -370,21 +371,23 @@ def done_cmd(cfg, ctx, ids):
 @cli.command(name='today')
 @click.pass_context
 def today_cmd(ctx):
-    """Shortcut for "francis list today"."""
+    """Shortcut for "francis list today"
+    """
     ctx.invoke(list_cmd)
 
 
 @cli.command(name='tomorrow')
 @click.pass_context
 def tomorrow_cmd(ctx):
-    """Shortcut for "francis list tomorrow"."""
+    """Shortcut for "francis list tomorrow"
+    """
     ctx.invoke(list_cmd, query=['tomorrow'])
 
 
 @cli.command(name='thisweek')
 @click.pass_context
 def thisweek_cmd(ctx):
-    """Shows this week."""
+    """Shows this week"""
     MON, TUE, WED, THU, FRI, SAT, SUN = range(7)
     LOOKUP = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
 
@@ -451,7 +454,8 @@ def timesheet_cmd(cfg, ctx):
 @cli.command(name='overdue')
 @click.pass_context
 def overdue_cmd(ctx):
-    """Shortcut for "francis list 'over due'"."""
+    """Shortcut for "francis list 'over due'"
+    """
     ctx.invoke(list_cmd, query=['over due'])
 
 
