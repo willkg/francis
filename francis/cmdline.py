@@ -4,6 +4,7 @@ import sys
 import traceback
 
 import click
+import pendulum
 import todoist
 
 from francis import __version__
@@ -207,6 +208,30 @@ def show_cmd(cfg, ctx, ids):
             click.echo('"%s" matches multiple items.' % item_id)
 
 
+@cli.command(name='deferall')
+@click.pass_context
+@add_config
+def deferall_cmd(cfg, ctx):
+    """Defers all of today's tasks to tomorrow
+
+    Note: This is "nuclear" in the sense that it goes and changes
+    EVERYTHING DUE TODAY. Don't use it if you're squeamish!
+
+    """
+    api = todoist.api.TodoistAPI(cfg['auth_token'])
+    api.sync()
+
+    today = datetime.date.today().strftime('%b %d')
+
+    history = []
+    for item in api.items.state[api.items.state_name]:
+        if item['date_string'] == today:
+            history.extend(apply_changes(api, item, ['due:tomorrow']))
+
+    api.commit()
+    click.echo('Done!')
+
+
 @cli.command(name='add')
 @click.argument('mods', nargs=-1)
 @click.pass_context
@@ -371,7 +396,6 @@ def list_cmd(cfg, ctx, query):
 
     """
     api = todoist.api.TodoistAPI(cfg['auth_token'])
-
     api.sync()
 
     if not query:
