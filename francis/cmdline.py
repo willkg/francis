@@ -4,6 +4,7 @@ import sys
 import traceback
 
 import click
+import pendulum
 import todoist
 
 from francis import __version__
@@ -397,6 +398,54 @@ def thisweek_cmd(ctx):
     for day in days:
         ctx.invoke(list_cmd, query=[day])
         click.echo('')
+
+
+@cli.command(name='timesheet')
+@click.pass_context
+@add_config
+def timesheet_cmd(cfg, ctx):
+    """Shows timesheet for the week"""
+    api = todoist.api.TodoistAPI(cfg['auth_token'])
+    api.sync()
+
+    marker = pendulum.now()
+    while marker.day_of_week != 0:
+        marker = marker.add(days=-1)
+
+    click.echo('Timesheet week of %s' % marker.strftime('%c'))
+    click.echo('')
+
+    for i in range(7):
+        activity = api.activity.get(
+            since=marker.strftime('%Y-%m-%dT00:00'),
+            until=marker.strftime('%Y-%m-%dT23:59')
+        )
+        click.echo('[%s]' % marker.strftime('%A (%Y-%m-%d)'))
+        click.echo('')
+        table = [
+            ('id', 'content', 'proj')
+        ]
+        for event in activity:
+            if event['event_type'] != 'completed':
+                continue
+
+            event_date = pendulum.parse(event['event_date'])
+            if event_date.strftime('%Y-%m-%d') != marker.strftime('%Y-%m-%d'):
+                continue
+
+            table.append(
+                (
+                    event['object_id'],
+                    event['extra_data']['content'],
+                    display_project(api.projects.get_by_id(event['parent_project_id'])),
+                )
+            )
+
+        table = prettytable(click.get_terminal_size()[0] - 2, table)
+        for row in table.splitlines():
+            click.echo('  ' + row)
+        click.echo('')
+        marker = marker.add(days=1)
 
 
 @cli.command(name='overdue')
