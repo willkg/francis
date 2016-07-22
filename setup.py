@@ -34,7 +34,7 @@ test_requirements = [
 setup(
     name='francis',
     version='0.1.0',
-    description="Todoist cli",
+    description='Todoist cli with taskwarrior likeness',
     long_description=(
         get_file('README.rst') + '\n\n' + get_file('HISTORY.rst')
     ),
@@ -61,10 +61,8 @@ setup(
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
         'Natural Language :: English',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.3',
-        'Programming Language :: Python :: 3.4',
-        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 2.7',
     ],
     cmdclass={'test': PyTest},
     tests_require=test_requirements
