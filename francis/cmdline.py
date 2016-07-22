@@ -1,14 +1,18 @@
 import datetime
 import functools
 import sys
-import textwrap
 import traceback
 
 import click
 import todoist
 
 from francis import __version__
-from francis.util import ConfigFileMissingError, get_config, prettytable
+from francis.util import (
+    ConfigFileMissingError,
+    get_config,
+    parse_date,
+    prettytable,
+)
 
 
 USAGE = '%prog [options] [command] [command-options]'
@@ -108,6 +112,16 @@ def apply_changes(api, item, changes):
                 item.move(proj['id'])
             except DoesNotExist:
                 click.echo('ERROR: "%s" does not exist' % new_val)
+
+        elif change.startswith('due'):
+            new_val = get_val(change)
+            try:
+                # FIXME: Seems like we can send date strings:
+                # https://support.todoist.com/hc/en-us/articles/205325931-Dates-and-Times
+                # item.update(date_string=parse_date(new_val))
+                item.update(date_string=new_val)
+            except ValueError:
+                click.echo('ERROR: "%s" is not a valid date' % new_val)
 
         elif change.startswith('done'):
             new_val = get_val(change)
