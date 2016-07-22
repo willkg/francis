@@ -114,9 +114,9 @@ def prettytable(width, rows):
     # Adjust the width we're using. Need to remove 3 spaces for every column.
     width = width - (len(col_size) * 3)
 
-    # If the columns size is greater than the terminal width, we need to
-    # shorten columns.
     if sum(col_size) > width:
+        # If the columns size is greater than the terminal width, we need to
+        # shorten columns.
         if width < (len(col_size) * 4):
             # If the terminal width is less than the number of columns * 4,
             # then let's just minimize all the columns and call it a day.
@@ -142,5 +142,17 @@ def prettytable(width, rows):
             for i, col in enumerate(row):
                 if len(str(col)) > col_size[i]:
                     row[i] = col[:col_size[i]-1] + '*'
+
+    elif sum(col_size) < width:
+        # If the columns size is less than the terminal width, we need to
+        # lengthen columns.
+
+        # FIXME: We (abuse) knowledge of which is the content column and expand
+        # that.
+        if 'content' in rows[0]:
+            adj = width - sum(col_size)
+            content_index = rows[0].index('content')
+            for row in rows:
+                row[content_index] = row[content_index] + (' ' * adj)
 
     return tabulate.tabulate(rows, headers="firstrow")

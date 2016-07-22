@@ -65,7 +65,7 @@ def add_config(fun):
 
 def display_priority(pri):
     if pri == 4:
-        return 'HIGH'
+        return 'H'
     return ''
 
 
@@ -164,6 +164,8 @@ def click_run():
 def cli(ctx):
     """Todoist cli for Will's devious purposes.
 
+    This cli is intended to promote MAXIMUM EFFORT!
+
     Note: If invoked without a COMMAND, this does "francis list today".
 
     """
@@ -221,6 +223,8 @@ def deferall_cmd(cfg, ctx):
     api = todoist.api.TodoistAPI(cfg['auth_token'])
     api.sync()
 
+    # Note: This will only change things with a date string equal to today
+    # formatted as "MMM DD". It won't cover recurring tasks or other things.
     today = datetime.date.today().strftime('%b %d')
 
     history = []
@@ -413,7 +417,7 @@ def list_cmd(cfg, ctx, query):
             continue
 
         table = [
-            ('pri', 'content', 'proj', 'due date', 'id')
+            ('id', 'pri', 'content', 'proj', 'due date')
         ]
         data = sorted(
             item['data'],
@@ -423,11 +427,11 @@ def list_cmd(cfg, ctx, query):
         for task in data:
             table.append(
                 (
+                    task['id'],
                     display_priority(task['priority']),
                     task['content'],
                     display_project(api.projects.get_by_id(task['project_id'])),
                     task['date_string'],
-                    task['id'],
                 )
             )
 
