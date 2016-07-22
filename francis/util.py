@@ -106,18 +106,18 @@ def prettytable(width, rows):
         row.extend([''] * (row_size - len(row)))
 
     # Initialize col_size with the length of each column in the first row
-    col_size = [len(str(col)) for col in rows[0]]
+    col_size = [len(str(col)) + 2 for col in rows[0]]
     for row in rows:
         for i, col in enumerate(row):
             col_size[i] = max(col_size[i], len(str(col)))
 
-    # Adjust the width we're using. Need to remove 3 spaces for every column.
-    width = width - (len(col_size) * 3)
+    # Adjust the width we're using. Need to remove 2 spaces for every column.
+    width = width - (len(col_size) * 2)
 
     if sum(col_size) > width:
         # If the columns size is greater than the terminal width, we need to
         # shorten columns.
-        if width < (len(col_size) * 4):
+        if width < (len(col_size) * 2):
             # If the terminal width is less than the number of columns * 4,
             # then let's just minimize all the columns and call it a day.
             col_size = [4] * len(col_size)
@@ -147,12 +147,16 @@ def prettytable(width, rows):
         # If the columns size is less than the terminal width, we need to
         # lengthen columns.
 
+        # FIXME: This is a fudge factor that "makes it work", but I'm not clear
+        # on why.
+        width = width - 2
+
         # FIXME: We (abuse) knowledge of which is the content column and expand
         # that.
         if 'content' in rows[0]:
-            adj = width - sum(col_size)
             content_index = rows[0].index('content')
+            adj = width - (sum(col_size) - col_size[content_index])
             for row in rows:
-                row[content_index] = row[content_index] + (' ' * adj)
+                row[content_index] = row[content_index] + (' ' * (adj - len(row[content_index])))
 
     return tabulate.tabulate(rows, headers="firstrow")
