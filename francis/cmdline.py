@@ -244,7 +244,7 @@ def _add(api, mods):
     text = []
 
     for item in mods:
-        if item.startswith('pri'):
+        if item.startswith('pri') and ':' in item:
             val = get_val(item)
             try:
                 kwargs['priority'] = PRIORITIES[val.lower()[0]]
@@ -252,14 +252,16 @@ def _add(api, mods):
                 click.echo('ERROR: pri "%s" does not exist. Try H or L.' % val)
                 raise click.Abort()
 
-        elif item.startswith('proj'):
+        elif item.startswith('proj') and ':' in item:
             val = get_val(item)
             try:
                 project_id = get_project_by_name(api, val)['id']
             except DoesNotExist:
                 click.echo('ERROR: "%s" is not a project.' % val)
                 raise click.Abort()
-        # FIXME: due date
+        elif item.startswith('due') and ':' in item:
+            val = get_val(item)
+            kwargs['date_string'] = val
         else:
             text.append(item)
 
