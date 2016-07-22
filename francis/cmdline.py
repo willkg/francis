@@ -4,7 +4,6 @@ import sys
 import traceback
 
 import click
-import pendulum
 import todoist
 
 from francis import __version__
@@ -435,7 +434,14 @@ def list_cmd(cfg, ctx, query):
                 )
             )
 
-        click.echo(prettytable(click.get_terminal_size()[0], table))
+        table = prettytable(click.get_terminal_size()[0], table)
+        for i, line in enumerate(table.splitlines()):
+            if i < 2:
+                click.echo(line)
+            elif i % 2 == 0:
+                click.secho(line, fg='cyan', dim=True)
+            else:
+                click.echo(line)
 
 
 def exception_handler(exc_type, exc_value, exc_tb):
