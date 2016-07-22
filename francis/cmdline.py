@@ -112,7 +112,7 @@ def apply_changes(api, item, changes):
                 history.append(Action(item, 'project', item['project_id'], new_val))
                 item.move(proj['id'])
             except DoesNotExist:
-                click.echo('ERROR: "%s" does not exist' % new_val)
+                click.echo('ERROR: Project "%s" does not exist' % new_val)
 
         elif change.startswith('due'):
             new_val = get_val(change)
@@ -305,7 +305,7 @@ def modify_cmd(cfg, ctx, ids, changes):
             history.extend(apply_changes(api, item, changes))
             click.echo('Applied changes to #%s: %s.' % (item['id'], item['content']))
         except DoesNotExist:
-            click.echo('"%s" does not exist.' % item_id)
+            click.echo('Task "%s" does not exist.' % item_id)
         except TooMany:
             click.echo('"%s" matches multiple items.' % item_id)
 
