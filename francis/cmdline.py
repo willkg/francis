@@ -411,7 +411,7 @@ def timesheet_cmd(cfg, ctx):
     api = todoist.api.TodoistAPI(cfg['auth_token'])
     api.sync()
 
-    marker = pendulum.now()
+    marker = pendulum.today()
     while marker.day_of_week != 0:
         marker = marker.add(days=-1)
 
@@ -419,28 +419,26 @@ def timesheet_cmd(cfg, ctx):
     click.echo('')
 
     for i in range(7):
-        activity = api.activity.get(
-            since=marker.strftime('%Y-%m-%dT00:00'),
-            until=marker.strftime('%Y-%m-%dT23:59')
+        begin_time = marker.start_of('day').in_timezone('UTC')
+        end_time = marker.end_of('day').in_timezone('UTC')
+
+        activity = api.completed.get_all(
+            since=begin_time.strftime('%Y-%m-%dT%H:%M'),
+            until=end_time.strftime('%Y-%m-%dT%H:%M'),
+            limit=50
         )
-        click.echo('[%s]' % marker.strftime('%A (%Y-%m-%d)'))
+
+        click.echo('[%s: %s]' % (marker.strftime('%A (%Y-%m-%d)'), len(activity['items'])))
         click.echo('')
         table = [
             ('id', 'content', 'proj')
         ]
-        for event in activity:
-            if event['event_type'] != 'completed':
-                continue
-
-            event_date = pendulum.parse(event['event_date'])
-            if event_date.strftime('%Y-%m-%d') != marker.strftime('%Y-%m-%d'):
-                continue
-
+        for event in activity['items']:
             table.append(
                 (
-                    event['object_id'],
-                    event['extra_data']['content'],
-                    display_project(api.projects.get_by_id(event['parent_project_id'])),
+                    event['task_id'],
+                    event['content'],
+                    display_project(api.projects.get_by_id(event['project_id'])),
                 )
             )
 
