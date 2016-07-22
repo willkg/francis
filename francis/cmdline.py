@@ -188,7 +188,7 @@ def undo_cmd(cfg, ctx):
 @click.argument('ids', nargs=1)
 @click.pass_context
 @add_config
-def show(cfg, ctx, ids):
+def show_cmd(cfg, ctx, ids):
     """Shows one or more items"""
     api = todoist.api.TodoistAPI(cfg['auth_token'])
     api.sync()
